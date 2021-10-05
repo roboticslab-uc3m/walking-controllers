@@ -14,12 +14,12 @@
   <!-- Modules -->
   <module>
     <name>WalkingModule</name>
-    <node>icub-head</node>
+    <node>teoSim</node>
   </module>
 
   <module>
     <name>WalkingJoypadModule</name>
-    <node>icub-head</node>
+    <node>TeoSim</node>
   </module>
 
 </application>

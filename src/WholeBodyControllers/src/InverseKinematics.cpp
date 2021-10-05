@@ -31,7 +31,7 @@
 using namespace WalkingControllers;
 
 WalkingIK::WalkingIK()
-    : m_verbose(false)
+    : m_verbose(true)
     , m_lFootFrame("l_sole")
     , m_rFootFrame("r_sole")
     , m_inertial_R_world(iDynTree::Rotation::Identity())
@@ -48,7 +48,7 @@ void WalkingIK::setVerboseMode(bool verboseMode) { m_verbose = verboseMode; }
 
 bool WalkingIK::initialize(yarp::os::Searchable& ikOption, const iDynTree::Model& model, const std::vector<std::string>& jointList)
 {
-    solverVerbosity = ikOption.check("solver-verbosity",yarp::os::Value(0)).asInt();
+    solverVerbosity = ikOption.check("solver-verbosity",yarp::os::Value(1)).asInt();
     maxCpuTime = ikOption.check("max-cpu-time",yarp::os::Value(0.2)).asDouble();
     m_jointRegularizationWeight = ikOption.check("joint_regularization_weight", yarp::os::Value(0.5)).asDouble();
     std::string lFootFrame = ikOption.check("left_foot_frame", yarp::os::Value("l_sole")).asString();
@@ -417,6 +417,8 @@ bool WalkingIK::computeIK(const iDynTree::Transform& leftTransform, const iDynTr
     if (m_verbose) {
         yInfo() << "CoM error position: "<< comError.toString();
         yInfo() << "Foot position error: "<<footError.toString();
+        yInfo() << " m_qResult" << m_qResult.toString();
+    
     }
 
     result = m_qResult;

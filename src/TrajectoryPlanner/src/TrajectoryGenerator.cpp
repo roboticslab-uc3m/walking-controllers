@@ -7,6 +7,10 @@
  */
 
 // YARP
+#include <yarp/os/all.h>
+#include <yarp/dev/all.h>
+#include <yarp/sig/all.h>
+
 #include <yarp/os/LogStream.h>
 #include <yarp/os/Value.h>
 
@@ -83,19 +87,19 @@ bool TrajectoryGenerator::configurePlanner(const yarp::os::Searchable& config)
     double timeWeight = config.check("timeWeight", yarp::os::Value(2.5)).asDouble();
     double positionWeight = config.check("positionWeight", yarp::os::Value(1.0)).asDouble();
     double slowWhenTurningGain = config.check("slowWhenTurningGain", yarp::os::Value(0.0)).asDouble();
-    double maxStepLength = config.check("maxStepLength", yarp::os::Value(0.05)).asDouble();
-    double minStepLength = config.check("minStepLength", yarp::os::Value(0.005)).asDouble();
-    double minWidth = config.check("minWidth", yarp::os::Value(0.03)).asDouble();
+    double maxStepLength = config.check("maxStepLength", yarp::os::Value(0.35)).asDouble();
+    double minStepLength = config.check("minStepLength", yarp::os::Value(0.05)).asDouble();
+    double minWidth = config.check("minWidth", yarp::os::Value(0.20)).asDouble();
     double maxAngleVariation = iDynTree::deg2rad(config.check("maxAngleVariation",
                                                               yarp::os::Value(40.0)).asDouble());
     double minAngleVariation = iDynTree::deg2rad(config.check("minAngleVariation",
                                                               yarp::os::Value(5.0)).asDouble());
     double maxStepDuration = config.check("maxStepDuration", yarp::os::Value(8.0)).asDouble();
-    double minStepDuration = config.check("minStepDuration", yarp::os::Value(2.9)).asDouble();
-    double stepHeight = config.check("stepHeight", yarp::os::Value(0.005)).asDouble();
+    double minStepDuration = config.check("minStepDuration", yarp::os::Value(1.0)).asDouble();
+    double stepHeight = config.check("stepHeight", yarp::os::Value(0.05)).asDouble();
     double landingVelocity = config.check("stepLandingVelocity", yarp::os::Value(0.0)).asDouble();
     double apexTime = config.check("footApexTime", yarp::os::Value(0.5)).asDouble();
-    double comHeight = config.check("com_height", yarp::os::Value(0.49)).asDouble();
+    double comHeight = config.check("com_height", yarp::os::Value(0.70)).asDouble();
     double comHeightDelta = config.check("comHeightDelta", yarp::os::Value(0.01)).asDouble();
     double nominalDuration = config.check("nominalDuration", yarp::os::Value(4.0)).asDouble();
     double lastStepSwitchTime = config.check("lastStepSwitchTime", yarp::os::Value(0.5)).asDouble();
@@ -104,14 +108,15 @@ bool TrajectoryGenerator::configurePlanner(const yarp::os::Searchable& config)
     double mergePointRatio = config.check("mergePointRatio", yarp::os::Value(0.5)).asDouble();
     double lastStepDCMOffset = config.check("lastStepDCMOffset", yarp::os::Value(0.0)).asDouble();
 
-    m_nominalWidth = config.check("nominalWidth", yarp::os::Value(0.04)).asDouble();
+    m_nominalWidth = config.check("nominalWidth", yarp::os::Value(0.22)).asDouble();
 
     m_swingLeft = config.check("swingLeft", yarp::os::Value(true)).asBool();
     bool startWithSameFoot = config.check("startAlwaysSameFoot", yarp::os::Value(false)).asBool();
     m_useMinimumJerk = config.check("useMinimumJerkFootTrajectory",
                                     yarp::os::Value(false)).asBool();
     double pitchDelta = config.check("pitchDelta", yarp::os::Value(0.0)).asDouble();
-
+    
+    yInfo() << "gait config values" << minStepLength << "\n";
     // try to configure the planner
     std::shared_ptr<UnicyclePlanner> unicyclePlanner = m_trajectoryGenerator.unicyclePlanner();
     bool ok = true;
@@ -236,6 +241,7 @@ void TrajectoryGenerator::computeThread()
         // add new point
         if(!unicyclePlanner->addDesiredTrajectoryPoint(endTime, desiredPoint))
         {
+            
             // something goes wrong
             std::lock_guard<std::mutex> guard(m_mutex);
             m_generatorState = GeneratorState::Configured;

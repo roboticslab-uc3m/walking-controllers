@@ -136,7 +136,7 @@ bool WalkingLoggerModule::configure(yarp::os::ResourceFinder &rf)
     attach(m_rpcPort);
 
     // set the RFModule period
-    m_dT = rf.check("sampling_time", yarp::os::Value(0.005)).asDouble();
+    m_dT = rf.check("sampling_time", yarp::os::Value(0.01)).asDouble();
 
     return true;
 }

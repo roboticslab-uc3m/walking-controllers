@@ -70,7 +70,7 @@ bool RobotInterface::getFeedbacksRaw(unsigned int maxAttempts)
 
         if(!okVelocity)
             okVelocity = m_encodersInterface->getEncoderSpeeds(m_velocityFeedbackDeg.data());
-
+	    
         if(!okLeftWrench)
         {
             yarp::sig::Vector *leftWrenchRaw = NULL;
@@ -159,9 +159,9 @@ bool RobotInterface::getFeedbacksRaw(unsigned int maxAttempts)
 bool RobotInterface::configureRobot(const yarp::os::Searchable& config)
 {
     // robot name: used to connect to the robot
-    std::string robot = config.check("robot", yarp::os::Value("icubSim")).asString();
+    std::string robot = config.check("robot", yarp::os::Value("teoSim")).asString();
 
-    double sampligTime = config.check("sampling_time", yarp::os::Value(0.016)).asDouble();
+    double sampligTime = config.check("sampling_time", yarp::os::Value(0.01)).asDouble();
 
     std::string name;
     if(!YarpUtilities::getStringFromSearchable(config, "name", name))
@@ -375,7 +375,7 @@ bool RobotInterface::configureRobot(const yarp::os::Searchable& config)
                      << m_axesList[i];
             return false;
         }
-
+	//yInfo() << "Mv:" <<maxVelocity<< "i:" << i ;
         m_jointVelocitiesBounds(i) = iDynTree::deg2rad(maxVelocity);
 
 
@@ -622,7 +622,8 @@ bool RobotInterface::setPositionReferences(const iDynTree::VectorDynSize& desire
         }
         m_controlMode = VOCAB_CM_POSITION;
     }
-
+    
+   	
     m_positioningTime = positioningTimeSec;
     m_positionMoveSkipped = false;
     if(m_positionInterface == nullptr)
@@ -854,6 +855,7 @@ const iDynTree::VectorDynSize& RobotInterface::getJointPosition() const
 }
 const iDynTree::VectorDynSize& RobotInterface::getJointVelocity() const
 {
+    //yInfo() << "m_velocityFeedbackRad" <<m_velocityFeedbackRad.toString();
     return m_velocityFeedbackRad;
 }
 
@@ -869,16 +871,17 @@ const iDynTree::Wrench& RobotInterface::getRightWrench() const
 
 const iDynTree::VectorDynSize& RobotInterface::getVelocityLimits() const
 {
+    //yInfo() << "m_jointVelocitiesBounds" <<m_jointVelocitiesBounds.toString();
     return m_jointVelocitiesBounds;
 }
 
 const iDynTree::VectorDynSize& RobotInterface::getPositionUpperLimits() const
-{
+{   //yInfo() << "m_jointPositionsUpperBounds" <<m_jointPositionsUpperBounds.toString();
     return m_jointPositionsUpperBounds;
 }
 
 const iDynTree::VectorDynSize& RobotInterface::getPositionLowerLimits() const
-{
+{   //yInfo() << "m_jointPositionsLowerBounds" <<m_jointPositionsLowerBounds.toString();
     return m_jointPositionsLowerBounds;
 }
 

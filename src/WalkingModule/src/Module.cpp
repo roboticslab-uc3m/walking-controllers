@@ -111,7 +111,7 @@ double WalkingModule::getPeriod()
 bool WalkingModule::setRobotModel(const yarp::os::Searchable& rf)
 {
     // load the model in iDynTree::KinDynComputations
-    std::string model = rf.check("model",yarp::os::Value("model.urdf")).asString();
+    std::string model = rf.check("teoc",yarp::os::Value("teoc.urdf")).asString();
     std::string pathToModel = yarp::os::ResourceFinder::getResourceFinderSingleton().findFileByName(model);
 
     yInfo() << "[WalkingModule::setRobotModel] The model is found in: " << pathToModel;
@@ -134,7 +134,7 @@ bool WalkingModule::configure(yarp::os::ResourceFinder& rf)
     m_dumpData = rf.check("dump_data", yarp::os::Value(false)).asBool();
 
     yarp::os::Bottle& generalOptions = rf.findGroup("GENERAL");
-    m_dT = generalOptions.check("sampling_time", yarp::os::Value(0.016)).asDouble();
+    m_dT = generalOptions.check("sampling_time", yarp::os::Value(0.01)).asDouble();
     std::string name;
     if(!YarpUtilities::getStringFromSearchable(generalOptions, "name", name))
     {
@@ -436,7 +436,7 @@ bool WalkingModule::solveQPIK(const std::unique_ptr<WalkingQPIK>& solver, const 
     }
 
     output = solver->getDesiredJointVelocities();
-
+    
     return true;
 }
 
@@ -535,7 +535,8 @@ bool WalkingModule::updateModule()
                 return false;
             }
 
-        // if a new trajectory is required check if its the time to evaluate the new trajectory or
+        // if a new trajectory is required check if its the time to evaluate the new trajectory or	
+        
         // the time to attach new one
         if(m_newTrajectoryRequired)
         {
@@ -613,6 +614,7 @@ bool WalkingModule::updateModule()
 
         // evaluate 3D-LIPM reference signal
         m_stableDCMModel->setInput(m_DCMPositionDesired.front());
+         
         if(!m_stableDCMModel->integrateModel())
         {
             yError() << "[WalkingModule::updateModule] Unable to propagate the 3D-LIPM.";
@@ -701,8 +703,9 @@ bool WalkingModule::updateModule()
         desiredCoMPosition(0) = outputZMPCoMControllerPosition(0);
         desiredCoMPosition(1) = outputZMPCoMControllerPosition(1);
         desiredCoMPosition(2) = m_retargetingClient->comHeight();
-
-
+	
+	
+	
         iDynTree::Vector3 desiredCoMVelocity;
         desiredCoMVelocity(0) = outputZMPCoMControllerVelocity(0);
         desiredCoMVelocity(1) = outputZMPCoMControllerVelocity(1);
@@ -781,7 +784,7 @@ bool WalkingModule::updateModule()
 
         if(!m_robotControlHelper->setDirectPositionReferences(m_qDesired))
         {
-            yError() << "[WalkingModule::updateModule] Error while setting the reference position to iCub.";
+            yError() << "[WalkingModule::updateModule] Error while setting the reference position to TEO.";
             return false;
         }
 
@@ -805,9 +808,16 @@ bool WalkingModule::updateModule()
                 desiredZMP = m_walkingController->getControllerOutput();
             else
                 desiredZMP = m_walkingDCMReactiveController->getControllerOutput();
-
+            
+            //FT dump data
+            const iDynTree::Wrench& rw = m_robotControlHelper->getRightWrench();
+            const iDynTree::Wrench& lw = m_robotControlHelper->getLeftWrench();
+            iDynTree::Position rww; rww(0) = rw.getLinearVec3()(0); rww(1) = rw.getLinearVec3()(1); rww(2) = rw.getLinearVec3()(2);
+            iDynTree::Position lww; lww(0)= lw.getLinearVec3()(0); lww(1)= lw.getLinearVec3()(1); lww(2)= lw.getLinearVec3()(2);
+            
             auto leftFoot = m_FKSolver->getLeftFootToWorldTransform();
             auto rightFoot = m_FKSolver->getRightFootToWorldTransform();
+            
             m_walkingLogger->sendData(m_FKSolver->getDCM(), m_DCMPositionDesired.front(), m_DCMVelocityDesired.front(),
                                       measuredZMP, desiredZMP, m_FKSolver->getCoMPosition(),
                                       m_stableDCMModel->getCoMPosition(), yarp::sig::Vector(1, m_retargetingClient->comHeight()),
@@ -817,7 +827,9 @@ bool WalkingModule::updateModule()
                                       m_leftTrajectory.front().getPosition(), m_leftTrajectory.front().getRotation().asRPY(),
                                       m_rightTrajectory.front().getPosition(), m_rightTrajectory.front().getRotation().asRPY(),
                                       m_robotControlHelper->getJointPosition(),
-                                      m_retargetingClient->jointValues());
+                                      m_qDesired,
+                                      rww, lww
+                                      );
         }
 
         // in the approaching phase the robot should not move and the trajectories should not advance
@@ -848,6 +860,7 @@ bool WalkingModule::evaluateZMP(iDynTree::Vector2& zmp)
     double zmpLeftDefined = 0.0, zmpRightDefined = 0.0;
 
     const iDynTree::Wrench& rightWrench = m_robotControlHelper->getRightWrench();
+
     if(rightWrench.getLinearVec3()(2) < 0.001)
         zmpRightDefined = 0.0;
     else
@@ -870,9 +883,16 @@ bool WalkingModule::evaluateZMP(iDynTree::Vector2& zmp)
     }
 
     double totalZ = rightWrench.getLinearVec3()(2) + leftWrench.getLinearVec3()(2);
+    //double RZ = rightWrench.getLinearVec3()(2);
+    //double LZ = leftWrench.getLinearVec3()(2);
+    //yInfo() << RZ;
+    //yInfo() << LZ;
+    
+    //yInfo() << totalZ;
     if(totalZ < 0.1)
     {
         yError() << "[evaluateZMP] The total z-component of contact wrenches is too low.";
+        yError() << "Fz_total:" << totalZ;
         return false;
     }
 
@@ -992,7 +1012,7 @@ bool WalkingModule::prepareRobot(bool onTheFly)
         return false;
     }
 
-    if(!m_robotControlHelper->setPositionReferences(m_qDesired, 5.0))
+    if(!m_robotControlHelper->setPositionReferences(m_qDesired, 5.0)) // 5.0
     {
         yError() << "[WalkingModule::prepareRobot] Error while setting the initial position.";
         return false;
@@ -1179,7 +1199,7 @@ bool WalkingModule::updateFKSolver()
     {
         m_FKSolver->evaluateWorldToBaseTransformation(m_robotControlHelper->getBaseTransform(),
                                                       m_robotControlHelper->getBaseTwist());
-
+	
     }
 
     if(!m_FKSolver->setInternalRobotState(m_robotControlHelper->getJointPosition(),
@@ -1195,7 +1215,7 @@ bool WalkingModule::updateFKSolver()
 bool WalkingModule::startWalking()
 {
     std::lock_guard<std::mutex> guard(m_mutex);
-
+	
     if(m_robotState != WalkingFSM::Prepared && m_robotState != WalkingFSM::Paused)
     {
         yError() << "[WalkingModule::startWalking] Unable to start walking if the robot is not prepared or paused.";
@@ -1220,18 +1240,20 @@ bool WalkingModule::startWalking()
                     "lf_des_roll", "lf_des_pitch", "lf_des_yaw",
                     "rf_des_x", "rf_des_y", "rf_des_z",
                     "rf_des_roll", "rf_des_pitch", "rf_des_yaw",
-                    "neck_pitch", "neck_roll", "neck_yaw",
-                    "torso_pitch", "torso_roll", "torso_yaw",
-                    "l_shoulder_pitch", "l_shoulder_roll", "l_shoulder_yaw", "l_elbow", "l_wrist_prosup",
-                    "r_shoulder_pitch", "r_shoulder_roll", "r_shoulder_yaw", "r_elbow", "r_wrist_prosup",
-                    "l_hip_pitch", "l_hip_roll", "l_hip_yaw", "l_knee", "l_ankle_pitch", "l_ankle_roll",
-                    "r_hip_pitch", "r_hip_roll", "r_hip_yaw", "r_knee", "r_ankle_pitch", "r_ankle_roll",
-                    "neck_pitch_des", "neck_roll_des", "neck_yaw_des",
-                    "torso_pitch_des", "torso_roll_des", "torso_yaw_des",
-                    "l_shoulder_pitch_des", "l_shoulder_roll_des", "l_shoulder_yaw_des", "l_elbow_des", "l_wrist_prosup_des",
-                    "r_shoulder_pitch_des", "r_shoulder_roll_des", "r_shoulder_yaw_des", "r_elbow_des", "r_wrist_prosup_des",
-                    "l_hip_pitch_des", "l_hip_roll_des", "l_hip_yaw_des", "l_knee_des", "l_ankle_pitch_des", "l_ankle_roll_des",
-                    "r_hip_pitch_des", "r_hip_roll_des", "r_hip_yaw_des", "r_knee_des", "r_ankle_pitch_des", "r_ankle_roll_des"});
+                    
+                    "waist_yaw", "waist_pitch", 
+			  "l_shoulder_pitch", "l_shoulder_roll", "l_shoulder_yaw", "l_elbow_pitch", "l_wrist_yaw", "l_wrist_pitch",
+			  "r_shoulder_pitch", "r_shoulder_roll", "r_shoulder_yaw", "r_elbow_pitch", "r_wrist_yaw", "r_wrist_pitch",
+			  "l_hip_yaw", "l_hip_roll", "l_hip_pitch", "l_knee_pitch", "l_ankle_pitch", "l_ankle_roll",
+			  "r_hip_yaw", "r_hip_roll", "r_hip_pitch", "r_knee_pitch", "r_ankle_pitch", "r_ankle_roll", 
+			  
+			  "waist_yaw_des", "waist_pitch_des", 
+			  "l_shoulder_pitch_des", "l_shoulder_roll_des", "l_shoulder_yaw_des", "l_elbow_pitch_des", "l_wrist_yaw_des", "l_wrist_pitch_des",
+			  "r_shoulder_pitch_des", "r_shoulder_roll_des", "r_shoulder_yaw_des", "r_elbow_pitch_des", "r_wrist_yaw_des", "r_wrist_pitch_des",
+			  "l_hip_yaw_des", "l_hip_roll_des", "l_hip_pitch_des", "l_knee_pitch_des", "l_ankle_pitch_des", "l_ankle_roll_des",
+			  "r_hip_yaw_des", "r_hip_roll_des", "r_hip_pitch_des", "r_knee_pitch_des", "r_ankle_pitch_des", "r_ankle_roll_des",
+			  "Right_Wrench_x", "Right_Wrench_y", "Right_Wrench_z", "Left_Wrench_x","Left_Wrench_y","Left_Wrench_z"
+			  });
     }
 
     // if the robot was only prepared the filters has to be reseted
@@ -1245,6 +1267,7 @@ bool WalkingModule::startWalking()
          {
              double heightOffset = (m_FKSolver->getLeftFootToWorldTransform().getPosition()(2)
                                     + m_FKSolver->getRightFootToWorldTransform().getPosition()(2)) / 2;
+             //yInfo() << heightOffset;
              m_robotControlHelper->setHeightOffset(heightOffset);
          }
 
@@ -1260,6 +1283,7 @@ bool WalkingModule::startWalking()
     // guarantees a smooth transition
     m_retargetingClient->setPhase(RetargetingClient::Phase::approacing);
     m_robotState = WalkingFSM::Walking;
+    
 
     return true;
 }
@@ -1269,7 +1293,7 @@ bool WalkingModule::setPlannerInput(double x, double y)
     // in the approaching phase the robot should not move
     // as soon as the approaching phase is finished the user
     // can move the robot
-    if(m_retargetingClient->isApproachingPhase())
+    if( m_retargetingClient->isApproachingPhase())
         return true;
 
     // the trajectory was already finished the new trajectory will be attached as soon as possible
@@ -1282,6 +1306,7 @@ bool WalkingModule::setPlannerInput(double x, double y)
         }
 
         if(m_newTrajectoryRequired)
+          
             return true;
 
         // Since the evaluation of a new trajectory takes time the new trajectory will be merged after x cycles
@@ -1303,6 +1328,7 @@ bool WalkingModule::setPlannerInput(double x, double y)
         else
         {
             if(m_newTrajectoryRequired)
+            
                 return true;
 
             m_newTrajectoryMergeCounter = 20;
@@ -1313,14 +1339,14 @@ bool WalkingModule::setPlannerInput(double x, double y)
     m_desiredPosition(1) = y;
 
     m_newTrajectoryRequired = true;
-
+    
     return true;
 }
 
 bool WalkingModule::setGoal(double x, double y)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
-
+       
     if(m_robotState != WalkingFSM::Walking)
         return false;
 

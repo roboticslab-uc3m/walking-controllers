@@ -557,7 +557,7 @@ bool WalkingQPIK::setDesiredJointPosition(const iDynTree::VectorDynSize& regular
     }
 
     m_regularizationTerm = regularizationTerm;
-
+    
     return true;
 }
 
@@ -599,6 +599,7 @@ bool WalkingQPIK::setDesiredRetargetingJoint(const iDynTree::VectorDynSize& join
     }
 
     m_retargetingJointValue = jointPosition;
+    
 
     return true;
 }
@@ -613,11 +614,13 @@ void WalkingQPIK::setDesiredHandsTwist(const iDynTree::Twist& leftHandTwist,
 void WalkingQPIK::setDesiredCoMVelocity(const iDynTree::Vector3& comVelocity)
 {
     m_desiredComVelocity = comVelocity;
+   // yInfo() << "Desired Com Velocity" << m_desiredComVelocity.toString() << "                                             .                                                            ";
 }
 
 void WalkingQPIK::setDesiredCoMPosition(const iDynTree::Position& desiredComPosition)
 {
     m_desiredComPosition = desiredComPosition;
+    //yInfo() << "Desired Com Position" << m_desiredComPosition.toString() << "                                             .                                                            ";
 }
 
 void WalkingQPIK::evaluateHessianMatrix()
@@ -844,11 +847,13 @@ void WalkingQPIK::evaluateBounds()
 
 const iDynTree::VectorDynSize& WalkingQPIK::getSolution() const
 {
+  //  yInfo() << "desired Joint Position" <<m_solution.toString() << "                                             .                                                            ";
     return m_solution;
 }
 
 const iDynTree::VectorDynSize& WalkingQPIK::getDesiredJointVelocities() const
 {
+   // yInfo() << "desired Joint Velocities" <<m_desiredJointVelocitiesOutput.toString() << "                                             .                                                            ";
     return m_desiredJointVelocitiesOutput;
 }
 
