@@ -38,6 +38,8 @@ void WalkingQPIK_osqp::setNumberOfConstraints()
 void WalkingQPIK_osqp::initializeSolverSpecificMatrices()
 {
     // add constraint for the maximum velocity.
+    
+    
     // In the following we suppose that the constraints are saved in the following order
     // (lf, rf com (if it is present))
     int startingRow = 6 + 6;
@@ -204,8 +206,9 @@ bool WalkingQPIK_osqp::solve()
     }
 
     iDynTree::toEigen(m_solution) = m_optimizerSolver->getSolution();
-    for(unsigned int i = 0; i < m_actuatedDOFs; i++)
+    for(unsigned int i = 0; i < m_actuatedDOFs; i++){
         m_desiredJointVelocitiesOutput(i) = m_solution(i + 6);
-
+	//yInfo() << "desiredJvelocity" << m_desiredJointVelocitiesOutput(i) << "joint" << i;
+	}
     return true;
 }

@@ -56,8 +56,8 @@ bool TrajectoryGenerator::configurePlanner(const yarp::os::Searchable& config)
     }
 
 
-    m_dT = config.check("sampling_time", yarp::os::Value(0.016)).asDouble();
-    m_plannerHorizon = config.check("plannerHorizon", yarp::os::Value(20.0)).asDouble();
+    m_dT = config.check("sampling_time", yarp::os::Value(0.01)).asDouble();
+    m_plannerHorizon = config.check("plannerHorizon", yarp::os::Value(10.0)).asDouble();
     double unicycleGain = config.check("unicycleGain", yarp::os::Value(10.0)).asDouble();
     double stancePhaseDelaySeconds = config.check("stance_phase_delay",yarp::os::Value(0.0)).asDouble();
 
@@ -86,29 +86,29 @@ bool TrajectoryGenerator::configurePlanner(const yarp::os::Searchable& config)
 
     double timeWeight = config.check("timeWeight", yarp::os::Value(2.5)).asDouble();
     double positionWeight = config.check("positionWeight", yarp::os::Value(1.0)).asDouble();
-    double slowWhenTurningGain = config.check("slowWhenTurningGain", yarp::os::Value(0.0)).asDouble();
-    double maxStepLength = config.check("maxStepLength", yarp::os::Value(0.35)).asDouble();
+    double slowWhenTurningGain = config.check("slowWhenTurningGain", yarp::os::Value(5.0)).asDouble();
+    double maxStepLength = config.check("maxStepLength", yarp::os::Value(0.265)).asDouble();
     double minStepLength = config.check("minStepLength", yarp::os::Value(0.05)).asDouble();
-    double minWidth = config.check("minWidth", yarp::os::Value(0.20)).asDouble();
+    double minWidth = config.check("minWidth", yarp::os::Value(0.24)).asDouble();
     double maxAngleVariation = iDynTree::deg2rad(config.check("maxAngleVariation",
-                                                              yarp::os::Value(40.0)).asDouble());
+                                                              yarp::os::Value(25.0)).asDouble());
     double minAngleVariation = iDynTree::deg2rad(config.check("minAngleVariation",
                                                               yarp::os::Value(5.0)).asDouble());
-    double maxStepDuration = config.check("maxStepDuration", yarp::os::Value(8.0)).asDouble();
-    double minStepDuration = config.check("minStepDuration", yarp::os::Value(1.0)).asDouble();
+    double maxStepDuration = config.check("maxStepDuration", yarp::os::Value(0.95)).asDouble();
+    double minStepDuration = config.check("minStepDuration", yarp::os::Value(0.70)).asDouble();
     double stepHeight = config.check("stepHeight", yarp::os::Value(0.05)).asDouble();
     double landingVelocity = config.check("stepLandingVelocity", yarp::os::Value(0.0)).asDouble();
-    double apexTime = config.check("footApexTime", yarp::os::Value(0.5)).asDouble();
-    double comHeight = config.check("com_height", yarp::os::Value(0.70)).asDouble();
-    double comHeightDelta = config.check("comHeightDelta", yarp::os::Value(0.01)).asDouble();
-    double nominalDuration = config.check("nominalDuration", yarp::os::Value(4.0)).asDouble();
-    double lastStepSwitchTime = config.check("lastStepSwitchTime", yarp::os::Value(0.5)).asDouble();
+    double apexTime = config.check("footApexTime", yarp::os::Value(0.75)).asDouble();
+    double comHeight = config.check("com_height", yarp::os::Value(0.73)).asDouble();
+    double comHeightDelta = config.check("comHeightDelta", yarp::os::Value(0.00)).asDouble();
+    double nominalDuration = config.check("nominalDuration", yarp::os::Value(0.90)).asDouble();
+    double lastStepSwitchTime = config.check("lastStepSwitchTime", yarp::os::Value(0.85)).asDouble();
     double switchOverSwingRatio = config.check("switchOverSwingRatio",
-                                               yarp::os::Value(0.4)).asDouble();
-    double mergePointRatio = config.check("mergePointRatio", yarp::os::Value(0.5)).asDouble();
-    double lastStepDCMOffset = config.check("lastStepDCMOffset", yarp::os::Value(0.0)).asDouble();
+                                               yarp::os::Value(0.85)).asDouble();
+    double mergePointRatio = config.check("mergePointRatio", yarp::os::Value(0.4)).asDouble();
+    double lastStepDCMOffset = config.check("lastStepDCMOffset", yarp::os::Value(0.25)).asDouble();
 
-    m_nominalWidth = config.check("nominalWidth", yarp::os::Value(0.22)).asDouble();
+    m_nominalWidth = config.check("nominalWidth", yarp::os::Value(0.26)).asDouble();
 
     m_swingLeft = config.check("swingLeft", yarp::os::Value(true)).asBool();
     bool startWithSameFoot = config.check("startAlwaysSameFoot", yarp::os::Value(false)).asBool();

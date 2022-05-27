@@ -112,6 +112,8 @@ namespace WalkingControllers
 
         iDynTree::ModelLoader m_loader; /**< Model loader class. */
 
+	iDynTree::VectorDynSize previous_m_q; // safety measure
+	
         iDynTree::VectorDynSize m_qDesired; /**< Vector containing the results of the IK algorithm [rad]. */
         iDynTree::VectorDynSize m_dqDesired; /**< Vector containing the results of the IK algorithm [rad]. */
 

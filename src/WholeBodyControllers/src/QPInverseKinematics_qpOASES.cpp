@@ -106,8 +106,8 @@ bool WalkingQPIK_qpOASES::solve()
 
     m_optimizer->getPrimalSolution(m_solution.data());
 
-    for(int i = 0; i < m_actuatedDOFs; i++)
+    for(int i = 0; i < m_actuatedDOFs; i++){
         m_desiredJointVelocitiesOutput(i) = m_solution(i + 6);
-
+	yInfo() << "desired VEl" << m_desiredJointVelocitiesOutput(i) << "joint" << i; }
     return true;
 }

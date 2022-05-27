@@ -38,6 +38,7 @@ bool WalkingQPIK::initialize(const yarp::os::Searchable &config,
                              const iDynTree::VectorDynSize& maxJointsPosition,
                              const iDynTree::VectorDynSize& minJointsPosition)
 {
+    //yInfo() << "maxjointsvelocity" << maxJointsVelocity.toString() ;
     m_actuatedDOFs = actuatedDOFs;
     // check if the config is empty
     if(config.isNull())
@@ -733,6 +734,7 @@ void WalkingQPIK::evaluateGradientVector()
                 {
                     Eigen::Vector3d result;
                     result = input / std::max(1.0, input.norm()/saturationValue); //Rescale the vector to limit it to saturationValue
+                   // yInfo() << "result" << result;
                     return result;
                 }
             }

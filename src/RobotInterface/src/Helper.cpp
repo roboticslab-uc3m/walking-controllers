@@ -159,7 +159,7 @@ bool RobotInterface::getFeedbacksRaw(unsigned int maxAttempts)
 bool RobotInterface::configureRobot(const yarp::os::Searchable& config)
 {
     // robot name: used to connect to the robot
-    std::string robot = config.check("robot", yarp::os::Value("teoSim")).asString();
+    std::string robot = config.check("robot", yarp::os::Value("teo")).asString();
 
     double sampligTime = config.check("sampling_time", yarp::os::Value(0.01)).asDouble();
 
@@ -375,9 +375,9 @@ bool RobotInterface::configureRobot(const yarp::os::Searchable& config)
                      << m_axesList[i];
             return false;
         }
-	//yInfo() << "Mv:" <<maxVelocity<< "i:" << i ;
+	
         m_jointVelocitiesBounds(i) = iDynTree::deg2rad(maxVelocity);
-
+	//yInfo() << "velocitiesBound:" <<m_jointVelocitiesBounds(i)<< "i:" << i ;
 
         if(!m_limitsInterface->getLimits(i, &minAngle, &maxAngle))
         {
@@ -446,7 +446,7 @@ bool RobotInterface::configureForceTorqueSensors(const yarp::os::Searchable& con
         return false;
     }
 
-    double sampligTime = config.check("sampling_time", yarp::os::Value(0.016)).asDouble();
+    double sampligTime = config.check("sampling_time", yarp::os::Value(0.01)).asDouble();
 
     // open and connect left foot wrench
     if(!YarpUtilities::getStringFromSearchable(config, "leftFootWrenchInputPort_name", portInput))
@@ -675,7 +675,8 @@ bool RobotInterface::setPositionReferences(const iDynTree::VectorDynSize& desire
         currentJointPositionRad = iDynTree::deg2rad(m_positionFeedbackDeg[i]);
         absoluteJointErrorRad = std::fabs(iDynTreeUtilities::shortestAngularDistance(currentJointPositionRad,
                                                                                      desiredJointPositionsRad(i)));
-        refSpeeds[i] = std::max(3.0, iDynTree::rad2deg(absoluteJointErrorRad) / positioningTimeSec);
+        refSpeeds[i] = std::max(0.4, iDynTree::rad2deg(absoluteJointErrorRad) / positioningTimeSec);
+       // yInfo()<< "joint" << i<< "refspeed [deg]" << refSpeeds[i] ;
     }
 
     if(!m_positionInterface->setRefSpeeds(refSpeeds.data()))

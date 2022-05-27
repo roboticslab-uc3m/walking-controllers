@@ -9,6 +9,7 @@
 // std
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 // YARP
 #include <yarp/os/RFModule.h>
@@ -464,6 +465,8 @@ bool WalkingModule::updateModule()
         }
         if(motionDone)
         {
+            
+        	
             // send the reference again in order to reduce error
             if(!m_robotControlHelper->setDirectPositionReferences(m_qDesired))
             {
@@ -541,7 +544,7 @@ bool WalkingModule::updateModule()
         if(m_newTrajectoryRequired)
         {
             // when we are near to the merge point the new trajectory is evaluated
-            if(m_newTrajectoryMergeCounter == 20)
+            if(m_newTrajectoryMergeCounter == 30)
             {
 
                 double initTimeTrajectory;
@@ -782,6 +785,27 @@ bool WalkingModule::updateModule()
         }
         m_profiler->setEndTime("IK");
 
+	//yarp::sig::Vector velLim(m_qDesired.size());
+        if (previous_m_q.size() == m_qDesired.size())
+        {
+            for (int i = 0; i < m_qDesired.size(); i++)
+            {
+                auto v = std::abs(m_qDesired[i] - previous_m_q[i]) / 0.05;
+                //velLim(i) = m_robotControlHelper->getVelocityLimits()(i);
+                if (v > 0.8)
+                {
+                    yError() << "Oh no! Velocity" << v << "index" << i << "Djoint" << m_qDesired[i] << "previousJoint" << previous_m_q[i] << "time" << m_time;
+                    //m_qDesired[i] =m_qDesired[i] - 0.005; 
+                    return false;
+                }
+                
+            //yInfo() << "INFO! Velocity" << v << "index" << i << "Djoint" << m_qDesired[i] << "previousJoint" << previous_m_q[i] << "time" << m_time;  
+            //yInfo() <<"i" <<i <<"velLim" << velLim(i);
+            }
+         }
+            
+         previous_m_q = m_qDesired;  
+              
         if(!m_robotControlHelper->setDirectPositionReferences(m_qDesired))
         {
             yError() << "[WalkingModule::updateModule] Error while setting the reference position to TEO.";
@@ -814,9 +838,13 @@ bool WalkingModule::updateModule()
             const iDynTree::Wrench& lw = m_robotControlHelper->getLeftWrench();
             iDynTree::Position rww; rww(0) = rw.getLinearVec3()(0); rww(1) = rw.getLinearVec3()(1); rww(2) = rw.getLinearVec3()(2);
             iDynTree::Position lww; lww(0)= lw.getLinearVec3()(0); lww(1)= lw.getLinearVec3()(1); lww(2)= lw.getLinearVec3()(2);
+
             
             auto leftFoot = m_FKSolver->getLeftFootToWorldTransform();
             auto rightFoot = m_FKSolver->getRightFootToWorldTransform();
+
+            
+           
             
             m_walkingLogger->sendData(m_FKSolver->getDCM(), m_DCMPositionDesired.front(), m_DCMVelocityDesired.front(),
                                       measuredZMP, desiredZMP, m_FKSolver->getCoMPosition(),
@@ -1252,7 +1280,8 @@ bool WalkingModule::startWalking()
 			  "r_shoulder_pitch_des", "r_shoulder_roll_des", "r_shoulder_yaw_des", "r_elbow_pitch_des", "r_wrist_yaw_des", "r_wrist_pitch_des",
 			  "l_hip_yaw_des", "l_hip_roll_des", "l_hip_pitch_des", "l_knee_pitch_des", "l_ankle_pitch_des", "l_ankle_roll_des",
 			  "r_hip_yaw_des", "r_hip_roll_des", "r_hip_pitch_des", "r_knee_pitch_des", "r_ankle_pitch_des", "r_ankle_roll_des",
-			  "Right_Wrench_x", "Right_Wrench_y", "Right_Wrench_z", "Left_Wrench_x","Left_Wrench_y","Left_Wrench_z"
+			  "Right_Wrench_x", "Right_Wrench_y", "Right_Wrench_z", "Left_Wrench_x","Left_Wrench_y","Left_Wrench_z", 
+			  
 			  });
     }
 
@@ -1310,13 +1339,13 @@ bool WalkingModule::setPlannerInput(double x, double y)
             return true;
 
         // Since the evaluation of a new trajectory takes time the new trajectory will be merged after x cycles
-        m_newTrajectoryMergeCounter = 20;
+        m_newTrajectoryMergeCounter = 30;
     }
 
     // the trajectory was not finished the new trajectory will be attached at the next merge point
     else
     {
-        if(m_mergePoints.front() > 20)
+        if(m_mergePoints.front() > 30)
             m_newTrajectoryMergeCounter = m_mergePoints.front();
         else if(m_mergePoints.size() > 1)
         {
@@ -1331,7 +1360,7 @@ bool WalkingModule::setPlannerInput(double x, double y)
             
                 return true;
 
-            m_newTrajectoryMergeCounter = 20;
+            m_newTrajectoryMergeCounter = 30;
         }
     }
 
